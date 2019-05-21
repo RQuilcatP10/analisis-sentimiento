@@ -1,21 +1,20 @@
 ---
 title: "Análisis de Sentimientos en las películas de Spielberg"
 output:
-  html_document: default
-  html_notebook: default
   pdf_document: default
+  html_notebook: default
+  html_document: default
 ---
 
 # Adquisición de Datos
 
 Primero tenemos que cargar las librerías necesarias.
 
-```{r echo=T, results='hide'}
+```{r echo=F, results='hide'}
 library(NLP)
 library(tm)
 library(RColorBrewer)
 library(wordcloud)
-library(SnowballC)
 library(reshape)
 library(stringi)
 library(reshape2)
@@ -43,11 +42,6 @@ corpus_clean <- tm_map(corpus_clean, content_transformer(stripWhitespace))
 corpus_clean <- tm_map(corpus_clean, removeNumbers)
 ```
 
-Finalmente lematizamos las palabras usando el lematizador de la librería de `tm` (pasamos, por ejemplo de 'reconocer' o 'reconocido' a 'reconoc').
-
-```{r}
-corpus_clean <- tm_map(corpus_clean, stemDocument, language = 'spanish')
-```
 
 # Vectorizado
 
@@ -66,7 +60,6 @@ camino        <- file.path('datos/diccionarios/positive_words_es.txt')
 listapositiva <- read.csv(camino,header=F,quote="",fileEncoding="Latin1")
 listapositiva <- as.matrix(listapositiva)
 listapositiva <- as.vector(listapositiva)
-listapositiva <- wordStem(listapositiva, language='spanish')
 
 ppositivas.tdm<- DocumentTermMatrix(corpus_clean, control = list(tokenize    = 'word',
                                                                  dictionary  = listapositiva,
@@ -81,7 +74,6 @@ camino        <- file.path('datos/diccionarios/negative_words_es.txt')
 listanegativa <- read.csv(camino,header=F,quote="",fileEncoding="Latin1")
 listanegativa <- as.matrix(listanegativa)
 listanegativa <- as.vector(listanegativa)
-listanegativa <- wordStem(listanegativa, language='spanish')
 
 pnegativas.tdm<- DocumentTermMatrix(corpus_clean, control = list(tokenize    = 'word',
                                                                  dictionary  = listanegativa,
@@ -136,12 +128,13 @@ rotten_tomatoes <- data.frame('movie' = c('Always', 'Atrapame si puedes', 'el mu
                               'rt_score' = c(6.0, 8.9, 5.1, 9.6, 7.2, 9.4, 9.7, 8.3, 9.1, 9.5, 9.0))
 
 scores <- merge(scores, rotten_tomatoes, 'movie')
+scores$rt_score <- scores$rt_score / 2
 ```
 
 ```{r}
 ggplot(scores, aes(x = movie, y = score, fill = movie)) + 
   geom_col() +
-  geom_point(aes(y = rt_score, color = movie)) +
+  geom_point(aes(y = rt_score)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "none",
         axis.title.x = element_blank())
@@ -158,9 +151,9 @@ print(paste0('Correlación entre negativas y RT score: ', cor(scores$negative, s
 
 Parece que nuestra hipótesis es correcta, ya que vemos tres cosas:
 
-1. Existe una correlación débil (0.32) entre nuestra puntuación y la de Rotten Tomatoes.
-2. Hay una correlación más fuerte (0.46) entre el porcentaje de palabras positivas y la puntuación de Rotten Tomatoes.
-3. La correlación entre palabras negativas y puntuación de Rotten Tomatoes es muy débil (-0.19), lo que refuerza la hipótesis de que estamos tratando como negativas palabras que no lo son en este contexto.
+1. Existe correlación (0.42) entre nuestra puntuación y la de Rotten Tomatoes.
+2. Hay una correlación ligeramente más fuerte (0.45) entre el porcentaje de palabras positivas y la puntuación de Rotten Tomatoes.
+3. La correlación entre palabras negativas y puntuación de Rotten Tomatoes es débil (-0.33), lo que refuerza la hipótesis de que estamos tratando como negativas palabras que no lo son en este contexto.
 
 
 Para entender mejor qué palabras están marcando la diferencia entre positivas y negativas vamos a generar nubes de palabras. Primero, una nube con todas las palabras del corpus.
@@ -184,7 +177,7 @@ m <- as.matrix(TermDocumentMatrix(corpus_clean, control = list(tokenize    = 'wo
                                                                stemming    = 'spanish')))
 m <- sort(rowSums(m), decreasing = TRUE)
 colorPalette <- brewer.pal(8, "Paired") 
-wordcloud(names(m), m, min.freq = 100, colors=colorPalette)
+wordcloud(names(m), m, min.freq = 30, colors=colorPalette)
 ```
 
 Parece que en general todas tienen bastante sentido. Veamos las negativas.
@@ -197,7 +190,7 @@ m <- as.matrix(TermDocumentMatrix(corpus_clean, control = list(tokenize    = 'wo
                                                                stemming    = 'spanish')))
 m <- sort(rowSums(m), decreasing = TRUE)
 colorPalette <- brewer.pal(8, "Paired") 
-wordcloud(names(m), m, min.freq = 100, colors=colorPalette)
+wordcloud(names(m), m, min.freq = 20, colors=colorPalette)
 ```
 
 Aquí vemos alguna inconsistencia que puede explicar la baja correlación, como 'terror' o 'soldado'.
@@ -213,7 +206,7 @@ Ya estamos! Siempre está bien una visualización chula, así que vamos a intent
 ```{r}
 scores$image <- paste0('datos/imagenes/', scores$movie, '.jpg')
 ggplot(scores, aes(x=positive, y=negative, image=image)) +
-  geom_image(asp=1.7, size=0.09) + ylim(c(10, 17)) + xlim(15.5, 20) +
+  geom_image(asp=1.7, size=0.1) + ylim(c(4.5, 8)) + xlim(7, 10.5) +
   xlab('% palabras positivas') + ylab('% palabras negativas')
 ```
 
