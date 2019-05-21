@@ -64,8 +64,7 @@ listapositiva <- as.vector(listapositiva)
 ppositivas.tdm<- DocumentTermMatrix(corpus_clean, control = list(tokenize    = 'word',
                                                                  dictionary  = listapositiva,
                                                                  stopwords   = FALSE,
-                                                                 wordLengths = c(0, Inf),
-                                                                 stemming    = 'spanish'))
+                                                                 wordLengths = c(0, Inf)))
 ppositivas.tdm
 ```
 
@@ -78,8 +77,7 @@ listanegativa <- as.vector(listanegativa)
 pnegativas.tdm<- DocumentTermMatrix(corpus_clean, control = list(tokenize    = 'word',
                                                                  dictionary  = listanegativa,
                                                                  stopwords   = FALSE,
-                                                                 wordLengths = c(0, Inf),
-                                                                 stemming    = 'spanish'))
+                                                                 wordLengths = c(0, Inf)))
 pnegativas.tdm
 ```
 
